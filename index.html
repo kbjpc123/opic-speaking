@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OPIc 표현 스피킹</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#6b7280;--ac:#4f46e5;--ok:#16a34a;--bd:#e5e7eb;--bad:#dc2626;--bl:#2563eb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#1a1d23;--tx:#eceff4;--mu:#9aa3b2;--ac:#818cf8;--ok:#4ade80;--bd:#2a2f38;--bad:#f87171;--bl:#60a5fa}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#1a1d23;--tx:#eceff4;--mu:#9aa3b2;--ac:#818cf8;--ok:#4ade80;--bd:#2a2f38;--bad:#f87171;--bl:#60a5fa}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;line-height:1.5}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+textarea{width:100%;min-height:110px;border:1px solid var(--bd);border-radius:10px;padding:10px;font:inherit;background:var(--bg);color:var(--tx);resize:vertical}
+button{font:inherit;border:0;border-radius:12px;padding:12px 16px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.hint{color:var(--mu);font-size:13px}
+.w{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);gap:8px}
+.w:last-child{border-bottom:0}
+.w button{padding:4px 10px;font-size:13px}
+.badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;background:var(--ac);color:#fff;margin-bottom:10px}
+.en{font-size:22px;font-weight:700;margin:6px 0}
+.ko{font-size:17px;color:var(--mu);margin:6px 0 14px}
+.blank{color:var(--bl);letter-spacing:1px;font-weight:700}
+.hl{color:var(--bl);font-weight:700}
+.ans{color:var(--ok)}
+#status{min-height:44px;font-size:14px;color:var(--mu)}
+#mic{width:72px;height:72px;border-radius:50%;font-size:28px;padding:0}
+#mic.on{background:var(--bad);animation:p 1s infinite}
+@keyframes p{50%{transform:scale(1.08)}}
+.center{display:flex;flex-direction:column;align-items:center;gap:10px}
+.hide{display:none}
+details.card summary{cursor:pointer;font-weight:600}
+details.card[open] summary{margin-bottom:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{background:transparent;color:var(--tx);border:1px solid var(--bd);padding:6px 12px;font-size:14px;border-radius:99px}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+input,select{font:inherit;border:1px solid var(--bd);border-radius:10px;padding:8px;background:var(--bg);color:var(--tx);max-width:100%}
+input{flex:1;min-width:120px}
+</style>
+</head>
+<body>
+<main>
+<h1>🎤 OPIc 표현 스피킹</h1>
+
+<section id="setup">
+ <div class="card">
+  <b>내 단어·숙어</b>
+  <div id="cats" class="chips"></div>
+  <div class="row" style="margin-top:0"><input id="catname" placeholder="카테고리 이름"><button class="sec" id="catadd">추가</button><button class="sec" id="catren">이름변경</button><button class="sec" id="catdel">삭제</button></div>
+  <p class="hint">한 줄에 하나씩 입력하세요. 뜻을 적고 싶으면 <code>표현 | 뜻</code> 형식도 가능해요.</p>
+  <textarea id="inp" placeholder="run out of | 다 떨어지다&#10;get used to&#10;hang out"></textarea>
+  <div class="row"><button id="add">추가</button></div>
+  <div class="hint" id="addmsg" style="margin-top:6px"></div>
+  <div class="row"><button class="sec" id="toggle">▼ 펼치기</button></div>
+  <div id="list" class="hide" style="margin-top:12px"></div>
+ </div>
+ <div class="card">
+  <label class="hint">학습 범위 <select id="scope"></select></label>
+  <div class="hint" id="env" style="margin-top:8px"></div>
+  <div class="hint" id="sync">이 기기에 저장 중</div>
+  <div class="row"><button id="start" style="flex:1">학습 시작</button></div>
+ </div>
+ <details class="card" id="aiBox"><summary>⚙️ AI 설정</summary>
+  <p class="hint">예문 생성에 쓸 AI를 고르세요. 키는 이 기기의 브라우저에만 저장돼요.</p>
+  <div class="row"><select id="prov"><option value="gemini">Gemini</option><option value="anthropic">Claude (Anthropic)</option><option value="openai">OpenAI 호환 / Ollama</option></select><input id="model" list="modellist" placeholder="모델명"><datalist id="modellist"></datalist></div>
+  <div class="row"><input id="key" type="password" placeholder="API 키 (Ollama는 비워도 됨)"></div>
+  <div class="row" id="baseRow"><input id="base" placeholder="http://localhost:11434/v1"></div>
+  <div class="row"><label class="hint">표현당 새로 만들 문장 묶음(3문장) <select id="maxg"><option>1</option><option>2</option><option>3</option><option>5</option></select> 개, 이후엔 저장된 문장 재사용</label></div>
+  <div class="row"><label class="hint"><input type="checkbox" id="reuse" style="flex:none;min-width:0"> 저장된 문장만 사용 (AI 호출 안 함)</label></div>
+  <div class="hint" id="stored"></div>
+  <div class="row"><button class="sec" id="cfgsave">저장</button><button class="sec" id="modelload">모델 자동 선택 (Gemini)</button><span class="hint" id="cfgmsg"></span></div>
+ </details>
+ <details class="card"><summary>☁️ 자동 동기화</summary>
+  <p class="hint">처음 기기: Firebase 설정(firebaseConfig)을 붙여넣고 연결 → "연결 문자열 복사". 다른 기기: 그 문자열을 붙여넣고 연결.</p>
+  <textarea id="fbcfg" style="min-height:80px" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, projectId: &quot;...&quot;, ... };"></textarea>
+  <div class="row"><input id="code" placeholder="동기화 코드 (비우면 자동 생성)"></div>
+  <div class="row"><input id="conn" placeholder="연결 문자열 (다른 기기에서 복사한 것)"></div>
+  <div class="row"><button id="fbconnect">연결</button><button class="sec" id="fbcopy">연결 문자열 복사</button><button class="sec" id="fbdisc">끊기</button></div>
+  <div class="hint" id="syncmsg" style="margin-top:6px"></div>
+ </details>
+</section>
+
+<section id="study" class="hide">
+ <div class="card">
+  <span class="badge" id="badge"></span>
+  <div class="hint" id="tgt"></div>
+  <div class="en" id="en"></div>
+  <div class="ko" id="ko"></div>
+  <div class="center">
+   <button id="mic" aria-label="마이크">🎙️</button>
+   <div id="status"></div>
+   <div class="row" style="width:100%;margin-top:0"><input id="ans" placeholder="마이크가 안 될 때: 여기에 입력 (키보드 음성입력 가능)"><button class="sec" id="go">확인</button></div>
+  </div>
+  <div class="row">
+   <button class="sec" id="hear">🔊 다시 듣기</button>
+   <button class="sec" id="reveal">정답 보기</button>
+   <button class="sec" id="skip">건너뛰기</button>
+  <button class="sec hide" id="retry">🔄 다시 시도</button>
+   <button class="sec" id="stop">종료</button>
+  </div>
+ </div>
+ <div class="hint" id="count" style="text-align:center"></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const hesc=t=>t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const hl=(en,t)=>{const i=en.indexOf(t);return i<0?hesc(en):hesc(en.slice(0,i))+'<span class="hl">'+hesc(t)+'</span>'+hesc(en.slice(i+t.length))};
+let words=[],cats=[],curCat='',pool=[],docRef=null,lastJson='',rev=0;
+const uid=()=>Math.random().toString(36).slice(2,9);
+try{const o=JSON.parse(localStorage.getItem('opic_store')||'null');if(o){words=o.words||[];cats=o.cats||[];rev=o.rev||0}else{words=JSON.parse(localStorage.getItem('opic_words')||'[]')}}catch(e){}
+function ensure(){
+ if(!cats.length)cats=[{id:'c0',name:'기본'}];
+ words.forEach(w=>{if(!w.c||!cats.some(c=>c.id===w.c))w.c=cats[0].id});
+ if(!cats.some(c=>c.id===curCat))curCat=cats[0].id;
+}
+function save(){
+ ensure();rev=Math.max(Date.now(),rev+1);
+ try{localStorage.setItem('opic_store',JSON.stringify({cats,words,rev}))}catch(e){}
+ if(docRef)push();
+}
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$('env').textContent=SR?'이 브라우저는 음성 인식을 지원해요. 마이크 권한을 허용해주세요.':'이 브라우저는 음성 인식을 지원하지 않아요. 안드로이드 Chrome이나 아이폰 Safari에서 열어주세요.';
+
+function render(){
+ $('list').innerHTML='';
+ const vis=words.map((w,i)=>[w,i]).filter(([w])=>w.c===curCat);
+ $('list').classList.toggle('hide',!listOpen);
+ $('toggle').textContent=(listOpen?'▲ 접기':'▼ 펼치기')+' · '+vis.length+'개';
+ vis.forEach(([w,i])=>{
+  const d=document.createElement('div');d.className='w';
+  const s=document.createElement('span');s.textContent=w.p+(w.m?' — '+w.m:'');
+  const b=document.createElement('button');b.className='sec';b.textContent='삭제';
+  b.onclick=()=>{words.splice(i,1);save();render()};
+  const sel=document.createElement('select');
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;if(c.id===w.c)o.selected=true;sel.append(o)});
+  sel.onchange=()=>{w.c=sel.value;save();renderAll()};
+  d.append(s,sel,b);$('list').append(d);
+ });
+ if(!vis.length)$('list').innerHTML='<div class="hint">이 카테고리에는 아직 표현이 없어요.</div>';
+}
+$('add').onclick=()=>{
+ let n=0;const dup=[];
+ $('inp').value.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
+  const k=l.search(/[|｜]/);
+  const p=(k<0?l:l.slice(0,k)).trim(),m=k<0?'':l.slice(k+1).trim();
+  if(!p)return;
+  if(words.some(w=>(w.p||'').toLowerCase()===p.toLowerCase()))dup.push(p);
+  else{words.push({p,m,c:curCat});n++}
+ });
+ if(n)$('inp').value='';
+ $('addmsg').textContent=(n?`${n}개 추가했어요. `:'추가할 새 표현이 없어요. ')+(dup.length?`이미 저장돼 있어 건너뜀: ${dup.join(', ')}`:'');
+ if(n){save();renderAll()}
+};
+function renderCats(){
+ const box=$('cats');box.innerHTML='';
+ cats.forEach(c=>{
+  const b=document.createElement('button');b.className='chip'+(c.id===curCat?' on':'');
+  b.textContent=c.name+' '+words.filter(w=>w.c===c.id).length;
+  b.onclick=()=>{curCat=c.id;renderAll()};box.append(b);
+ });
+}
+function renderScope(){
+ const s=$('scope'),v=s.value||'all';s.innerHTML='';
+ [{id:'all',name:'전체'},...cats].forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;s.append(o)});
+ s.value=[...s.options].some(o=>o.value===v)?v:'all';
+}
+function renderAll(){renderCats();render();renderScope()}
+$('catadd').onclick=()=>{const n=$('catname').value.trim();if(!n)return;const c={id:uid(),name:n};cats.push(c);curCat=c.id;$('catname').value='';save();renderAll()};
+$('catren').onclick=()=>{const n=$('catname').value.trim(),c=cats.find(c=>c.id===curCat);if(!n||!c)return;c.name=n;$('catname').value='';save();renderAll()};
+$('catdel').onclick=()=>{
+ if(cats.length<2){$('sync').textContent='카테고리는 최소 하나가 필요해요.';return}
+ const i=cats.findIndex(c=>c.id===curCat);cats.splice(i,1);const t=cats[0].id;
+ words.forEach(w=>{if(w.c===curCat)w.c=t});curCat=t;save();renderAll();
+};
+let listOpen=false;
+$('toggle').onclick=()=>{listOpen=!listOpen;render()};
+ensure();renderAll();
+
+
+/* ---------- 음성 ---------- */
+function speak(text,lang){
+ return new Promise(res=>{
+  try{
+   speechSynthesis.cancel();
+   const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=lang==='en-US'?0.92:1;
+   const v=speechSynthesis.getVoices().find(v=>v.lang.replace('_','-')===lang);if(v)u.voice=v;
+   u.onend=u.onerror=()=>res();speechSynthesis.speak(u);
+   setTimeout(res,20000);
+  }catch(e){res()}
+ });
+}
+let rec=null,typedFn=null,stopFn=null;
+function listen(ok){
+ return new Promise(res=>{
+  if(!SR){res({err:'unsupported'});return}
+  const T0=Date.now(),FIRST=12000,SILENCE=4000;
+  let final='',interim='',done=false,lastAt=0,stopping=false,restarts=0;
+  const fin=r=>{if(!done){done=true;clearInterval(tm);typedFn=null;stopFn=null;$('mic').classList.remove('on');res(r)}};
+  const heard=()=>final.split(' | ').filter(Boolean);
+  const mk=()=>{
+   rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
+   rec.onresult=e=>{
+    interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+     const r=e.results[i];
+     if(r.isFinal){final+=Array.from(r).map(a=>a.transcript).join(' | ')+' | '}else interim+=r[0].transcript;
+    }
+    lastAt=Date.now();
+    $('status').textContent='🎧 '+(interim||heard()[0]||'');
+    if(ok&&heard().some(ok)){stopping=true;try{rec.abort()}catch(x){}fin({text:final})}
+   };
+   rec.onerror=e=>{
+    if(e.error==='aborted'){stopping=true;return}
+    if(e.error==='no-speech')return;
+    fin({err:e.error});
+   };
+   rec.onend=()=>{
+    if(done)return;
+    const now=Date.now();
+    const waiting=!stopping&&(lastAt?now-lastAt<SILENCE:now-T0<FIRST);
+    if(waiting&&restarts++<8){try{mk();rec.start();return}catch(x){}}
+    fin({text:final||interim});
+   };
+  };
+  const tm=setInterval(()=>{
+   const now=Date.now();
+   if(lastAt?now-lastAt>SILENCE:now-T0>FIRST){stopping=true;try{rec.stop()}catch(x){fin({text:final||interim})}}
+  },300);
+  typedFn=t=>{stopping=true;try{rec.abort()}catch(e){}fin({text:t})};
+  stopFn=()=>{stopping=true;try{rec.stop()}catch(e){fin({text:final||interim})}};
+  try{mk();rec.start();$('mic').classList.add('on');$('status').textContent='말씀하세요…'}catch(e){fin({err:'start'})}
+ });
+}
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9' ]+/g,' ').split(/\s+/).filter(Boolean);
+const same=(a,b)=>a===b||(a.length>3&&b.length>3&&(a.startsWith(b.slice(0,-2))||b.startsWith(a.slice(0,-2))));
+const hasAll=(heard,target)=>{const h=norm(heard),t=norm(target);return t.every(x=>h.some(y=>same(x,y)))};
+const similar=(heard,full)=>{const h=norm(heard),f=norm(full);return f.filter(x=>h.some(y=>same(x,y))).length/f.length>=0.6};
+
+/* ---------- 문장 재사용 캐시 ---------- */
+let dbh=null,uidv=null;
+const maxg=()=>cfg.maxg||3,useIdx={};
+const hk=p=>{let h=5381;p=p.toLowerCase();for(let i=0;i<p.length;i++)h=((h<<5)+h+p.charCodeAt(i))|0;return 'k'+(h>>>0).toString(36)};
+let sc={};try{sc=JSON.parse(localStorage.getItem('opic_sents')||'{}')}catch(e){}
+const cacheGet=p=>(sc[hk(p)]&&sc[hk(p)].groups)||[];
+const scSave=()=>{try{localStorage.setItem('opic_sents',JSON.stringify(sc))}catch(e){}try{updateStored()}catch(e){}};
+function updateStored(){const ks=Object.keys(sc);$('stored').textContent='저장된 문장: 표현 '+ks.length+'개 · 묶음 '+ks.reduce((a,k)=>a+sc[k].groups.length,0)+'개'}
+function cachePut(p,items){
+ const k=hk(p),e=sc[k]||(sc[k]={p,groups:[]});e.groups.push(items);scSave();
+ if(docRef)push();
+}
+async function loadCache(){
+ if(!dbh)return;
+ await Promise.all(pool.map(async w=>{
+  const k=hk(w.p);if(sc[k]&&sc[k].groups.length>=maxg())return;
+  try{const s=await dbh.doc('data/users/'+uidv+'/s_'+k).get();
+   if(s&&s.exists){const e=JSON.parse(JSON.stringify(s.data()));if(e&&e.groups&&(!sc[k]||e.groups.length>sc[k].groups.length))sc[k]=e}}catch(e){}
+ }));
+ scSave();
+}
+window.addEventListener('error',e=>{$('addmsg').textContent='오류: '+e.message});
+
+/* ---------- Firebase 자동 동기화 ---------- */
+let sync=null,unsub=null;
+try{sync=JSON.parse(localStorage.getItem('opic_sync')||'null')}catch(e){}
+const loadScript=src=>new Promise((res,rej)=>{const t=document.createElement('script');t.src=src;t.onload=res;t.onerror=()=>rej(new Error('Firebase 스크립트를 불러오지 못했어요'));document.head.append(t)});
+const genCode=()=>Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>(x%36).toString(36)).join('');
+function push(){
+ if(!docRef)return;
+ docRef.set({cats,words,rev,sc:JSON.stringify(sc)}).then(()=>{$('sync').textContent='☁️ 동기화됨'}).catch(e=>{$('sync').textContent='동기화 실패: '+(e.code||e.message)});
+}
+async function connect(){
+ if(!sync)return;
+ try{
+  if(!window.firebase){
+   await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+   await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+  }
+  if(!firebase.apps.length)firebase.initializeApp(sync.fb);
+  const fbDoc=firebase.firestore().collection('sync').doc(sync.code);
+  let first=true;
+  $('sync').textContent='☁️ 연결 중…';
+  unsub=fbDoc.onSnapshot(snap=>{
+   if(snap.metadata.hasPendingWrites)return;
+   if(!snap.exists){first=false;docRef=fbDoc;push();return}
+   const r=JSON.parse(JSON.stringify(snap.data()));
+   let rc=r.cats||[],rw=r.words||[],rr=r.rev||0,changed=false,adopt=false,remoteSc={};
+   try{remoteSc=JSON.parse(r.sc||'{}')}catch(e){}
+   const localMore=Object.keys(sc).some(k=>!remoteSc[k]||remoteSc[k].groups.length<sc[k].groups.length);
+   let sch=false;
+   Object.entries(remoteSc).forEach(([k,v])=>{if(!sc[k]||sc[k].groups.length<v.groups.length){sc[k]=v;sch=true}});
+   if(first){
+    first=false;adopt=true;
+    cats.forEach(c=>{if(!rc.some(x=>x.id===c.id)){rc.push(c);changed=true}});
+    words.forEach(w=>{if(!rw.some(x=>x.p.toLowerCase()===w.p.toLowerCase())){rw.push(w);changed=true}});
+   }else if(rr>rev)adopt=true;
+   if(adopt){cats=rc;words=rw;rev=Math.max(rev,rr);ensure();renderAll()}
+   if(sch)scSave();
+   if(adopt)try{localStorage.setItem('opic_store',JSON.stringify({cats,words,rev}))}catch(e){}
+   docRef=fbDoc;
+   $('sync').textContent='☁️ 동기화됨';
+   if(changed)save();else if(localMore)push();
+  },err=>{$('sync').textContent='동기화 오류: '+(err.code||err.message)});
+ }catch(e){$('sync').textContent='연결 실패: '+e.message}
+}
+function showSync(){if(sync){$('code').value=sync.code;$('syncmsg').textContent='연결됨. 다른 기기에는 "연결 문자열 복사"로 옮기세요.'}}
+$('fbconnect').onclick=async()=>{
+ try{
+  const conn=$('conn').value.trim();
+  if(conn)sync=JSON.parse(decodeURIComponent(escape(atob(conn))));
+  else{
+   const fb={};$('fbcfg').value.replace(/(\w+)\s*:\s*["']([^"']*)["']/g,(m,k,v)=>{fb[k]=v});
+   if(!fb.projectId||!fb.apiKey)throw new Error('firebaseConfig를 붙여넣어주세요');
+   sync={fb,code:$('code').value.trim()||genCode()};
+  }
+  if(!sync.fb||!sync.code)throw new Error('연결 정보가 올바르지 않아요');
+  localStorage.setItem('opic_sync',JSON.stringify(sync));
+  if(unsub){unsub();unsub=null}docRef=null;
+  showSync();await connect();
+ }catch(e){$('syncmsg').textContent='연결 실패: '+e.message}
+};
+$('fbcopy').onclick=async()=>{
+ if(!sync){$('syncmsg').textContent='먼저 연결해주세요.';return}
+ const t=btoa(unescape(encodeURIComponent(JSON.stringify(sync))));$('conn').value=t;
+ try{await navigator.clipboard.writeText(t)}catch(e){}
+ $('syncmsg').textContent='연결 문자열을 복사했어요. 다른 기기의 입력칸에 붙여넣으세요.';
+};
+$('fbdisc').onclick=()=>{if(unsub){unsub();unsub=null}docRef=null;sync=null;try{localStorage.removeItem('opic_sync')}catch(e){}$('sync').textContent='이 기기에 저장 중';$('syncmsg').textContent='연결을 끊었어요.'};
+showSync();connect();
+
+/* ---------- AI 설정 ---------- */
+let cfg={provider:'gemini',key:'',model:'gemini-flash-latest',base:'http://localhost:11434/v1'};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('opic_cfg')||'{}'))}catch(e){}
+const MODELS={gemini:'gemini-flash-latest',anthropic:'claude-haiku-5-5',openai:'llama3.1'};
+function cfgUI(){$('maxg').value=cfg.maxg||3;$('reuse').checked=!!cfg.reuseOnly;updateStored();$('prov').value=cfg.provider;$('key').value=cfg.key;$('model').value=cfg.model;$('base').value=cfg.base;$('baseRow').classList.toggle('hide',cfg.provider!=='openai')}
+$('prov').onchange=()=>{cfg.provider=$('prov').value;cfg.model=MODELS[cfg.provider];cfgUI()};
+$('cfgsave').onclick=()=>{cfg.key=$('key').value.trim();cfg.model=$('model').value.trim();cfg.base=$('base').value.trim();cfg.maxg=+$('maxg').value;cfg.reuseOnly=$('reuse').checked;try{localStorage.setItem('opic_cfg',JSON.stringify(cfg))}catch(e){}$('cfgmsg').textContent='저장했어요.'};
+const cfgOk=()=>!!cfg.reuseOnly||(cfg.provider==='openai'?!!(cfg.base&&cfg.model):!!(cfg.key&&cfg.model));
+cfgUI();
+async function geminiCall(model,prompt){
+ const r=await ft('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(cfg.key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})});
+ return {r,j:await r.json()};
+}
+async function pickGemini(){
+ const r=await ft('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key='+encodeURIComponent(cfg.key));
+ const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+ const ms=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>m.name.replace('models/',''));
+ $('modellist').innerHTML=ms.map(n=>'<option value="'+n+'">').join('');
+ const cand=ms.filter(n=>/^gemini-.*flash/.test(n)&&!/image|tts|live|audio|robotics|embedding|computer|thinking|exp/.test(n));
+ const ver=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
+ cand.sort((a,b)=>ver(b)-ver(a)||(/lite/.test(a)-/lite/.test(b))||(/preview/.test(a)-/preview/.test(b)));
+ return {list:ms,best:cand[0],alts:cand};
+}
+$('modelload').onclick=async()=>{
+ try{
+  cfg.key=$('key').value.trim();
+  const p=await pickGemini();
+  if(p.best){cfg.provider='gemini';cfg.model=p.best;cfgUI();try{localStorage.setItem('opic_cfg',JSON.stringify(cfg))}catch(e){}$('cfgmsg').textContent='선택: '+p.best}
+  else $('cfgmsg').textContent='쓸 수 있는 Flash 모델을 못 찾았어요. 모델명 칸의 목록에서 직접 고르세요.';
+ }catch(e){$('cfgmsg').textContent='실패: '+e.message}
+};
+let aiTimeout=60000;
+async function ft(url,opt){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),aiTimeout);
+ try{return await fetch(url,{...opt,signal:c.signal})}
+ catch(e){throw new Error(e&&e.name==='AbortError'?'AI 응답 시간 초과('+Math.round(aiTimeout/1000)+'초)':'AI 서버에 연결하지 못했어요: '+((e&&e.message)||e))}
+ finally{clearTimeout(t)}
+}
+async function llmJson(prompt){
+ let text='',r,j;
+ if(cfg.provider==='gemini'){
+  const msg=o=>(o.j&&o.j.error&&o.j.error.message)||'';
+  const bad=o=>!o.r.ok&&(/high demand|overload|unavailable|try again/i.test(msg(o))||[429,500,503,504].includes(o.r.status));
+  let o=await geminiCall(cfg.model,prompt);
+  if(!o.r.ok&&/no longer available|not found|not supported/i.test(msg(o))){
+   const p=await pickGemini();
+   if(p.best){cfg.model=p.best;$('model').value=p.best;try{localStorage.setItem('opic_cfg',JSON.stringify(cfg))}catch(e){}o=await geminiCall(cfg.model,prompt)}
+  }
+  for(let i=0;i<3&&bad(o);i++){await new Promise(r=>setTimeout(r,1500*(i+1)));o=await geminiCall(cfg.model,prompt)}
+  if(bad(o)){
+   const p=await pickGemini().catch(()=>null);
+   const alts=p?p.alts.filter(n=>n!==cfg.model).sort((a,b)=>(/lite/.test(b)-/lite/.test(a))).slice(0,4):[];
+   for(const m of alts){o=await geminiCall(m,prompt);if(o.r.ok)break}
+  }
+  if(!o.r.ok)throw new Error(msg(o)||o.r.status);
+  text=o.j.candidates[0].content.parts.map(p=>p.text||'').join('');
+ }else if(cfg.provider==='anthropic'){
+  r=await ft('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:cfg.model,max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+  j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+  text=j.content.map(c=>c.text||'').join('');
+ }else{
+  const h={'Content-Type':'application/json'};if(cfg.key)h.Authorization='Bearer '+cfg.key;
+  r=await ft(cfg.base.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:h,body:JSON.stringify({model:cfg.model,messages:[{role:'user',content:prompt}]})});
+  j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+  text=j.choices[0].message.content;
+ }
+ const m=text.match(/\[[\s\S]*\]/);return JSON.parse(m?m[0]:text);
+}
+/* ---------- 문장 생성 ---------- */
+let errCount=0,lastErr='',failUntil=0,sample=null,queue=[],loading=false,ptr=0,order=[],runId=0,skipFn=null,micFn=null,cur=null,done=0;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+async function fetchBatch(){
+ if(loading||Date.now()<failUntil)return;loading=true;
+ try{
+  if(cfg.reuseOnly&&!pool.some(w=>cacheGet(w.p).length))throw new Error('저장된 문장이 아직 없어요. "저장된 문장만 사용"을 끄고 먼저 문장을 만들어주세요.');
+  if(ptr>=order.length){order=shuffle(pool);ptr=0}
+  const picked=order.slice(ptr,ptr+2);ptr+=2;
+  const pick=[];
+  picked.forEach(w=>{
+   const gs=cacheGet(w.p);
+   if(gs.length>=maxg()||(cfg.reuseOnly&&gs.length)){const k=((useIdx[w.p]??Math.floor(Math.random()*gs.length))+1);useIdx[w.p]=k;queue.push({word:w.p,items:gs[k%gs.length]})}
+   else if(!cfg.reuseOnly)pick.push(w);
+  });
+  if(!pick.length)return;
+  const list=pick.map(w=>w.p+(w.m?` (뜻: ${w.m})`:'')).join('\n');
+  const out=await llmJson(`You are an English tutor for OPIc speaking practice (Korean learner, level IM–AL).
+For EACH expression below, write 3 different short, natural, everyday sentences (6-12 words) in different situations (daily life, hobbies, travel, work, home).
+Expressions:
+${list}
+
+Make the 3 sentences for one expression clearly different from each other, and keep them simple.
+Return ONLY a JSON array, no other text, one object per expression: {"word": expression as given, "sentences": [3 objects, each {"en": English sentence, "ko": natural Korean translation, "target": the exact substring of "en" that contains the expression (inflection allowed, e.g. "ran out of")}]}.`);
+  const arr=Array.isArray(out)?out:((out&&(out.expressions||out.items||out.data||Object.values(out).find(Array.isArray)))||[]);
+  const esc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const find=(en,t)=>{if(!t)return null;const i=en.toLowerCase().indexOf(String(t).toLowerCase());return i>=0?en.substr(i,String(t).length):null};
+  const stemFind=(en,w)=>{const parts=String(w).split(/\s+/).filter(Boolean).map(t=>t.length>3?esc(t.slice(0,-1))+'\\w*':esc(t));if(!parts.length)return null;const m=en.match(new RegExp(parts.join('\\W+'),'i'));return m?m[0]:null};
+  const gs=arr.map(g=>({word:g.word||'',items:(g.sentences||g.examples||[]).map(x=>{
+    if(!x||!x.en||!x.ko)return null;
+    const t=find(x.en,x.target)||find(x.en,g.word)||stemFind(x.en,g.word||'');
+    return t?{en:x.en,ko:x.ko,target:t}:null;
+  }).filter(Boolean).slice(0,3)})).filter(g=>g.items.length);
+  if(!gs.length)throw new Error('AI 응답을 해석하지 못했어요: '+JSON.stringify(out).slice(0,150));
+  gs.forEach((g,i)=>{
+   const gw=String(g.word).toLowerCase();const w=pick.find(x=>x.p.toLowerCase()===gw)||pick.find(x=>gw&&(gw.includes(x.p.toLowerCase())||x.p.toLowerCase().includes(gw)))||(gs.length===pick.length?pick[i]:null);
+   if(w)cachePut(w.p,g.items);
+  });
+  queue.push(...shuffle(gs));errCount=0;lastErr='';
+ }catch(e){
+  lastErr=(e&&e.message)||String(e);errCount++;
+  const cw=shuffle(pool.filter(w=>cacheGet(w.p).length));
+  if(cw.length&&!cfg.reuseOnly){const gs0=cacheGet(cw[0].p);queue.push({word:cw[0].p,items:gs0[Math.floor(Math.random()*gs0.length)]});errCount=0;}
+failUntil=Date.now()+5000;$('status').textContent='문장 생성 실패: '+(e&&e.message||e)+' (자동으로 다시 시도 중…)';
+ }finally{loading=false}
+}
+async function nextItem(id=runId){
+ if(queue.length<2)fetchBatch();
+ const t0=Date.now();
+ while(!queue.length){
+  await new Promise(r=>setTimeout(r,300));
+  if(id!==runId)return null;
+  if(!loading)await fetchBatch();
+  if(errCount>=6)return null;
+  $('status').textContent='문장을 만드는 중… '+Math.round((Date.now()-t0)/1000)+'초'+(lastErr?' (재시도 중 — '+lastErr+')':'');
+ }
+ return queue.shift();
+}
+
+/* ---------- 세션 ---------- */
+const SKIP={};
+const race=p=>Promise.race([p,new Promise(r=>skipFn=()=>r(SKIP))]);
+function micWait(){return new Promise(r=>micFn=r)}
+
+async function until(id,ok){
+ for(;;){
+  if(id!==runId)return 'cancel';
+  const r=await race(listen(ok));
+  if(r===SKIP){try{rec&&rec.abort()}catch(e){}return 'skip'}
+  if(id!==runId)return 'cancel';
+  if(r.err&&r.err!=='no-speech'&&r.err!=='aborted'){
+   $('status').textContent=r.err==='not-allowed'||r.err==='service-not-allowed'?'이 화면에서는 마이크 인식이 막혀 있어요('+r.err+'). 아래 입력칸에 답을 적거나 키보드 음성입력을 써주세요.':'인식 오류('+r.err+'). 키보드로 답하거나 🎙️를 눌러 다시 시도해요.';
+   try{$('ans').focus()}catch(e){}
+   const x=await race(micWait());if(x===SKIP)return 'skip';
+   if(x&&x.text&&ok(x.text))return 'ok';continue;
+  }
+  const heard=(r.text||'').split(' | ').filter(Boolean);
+  if(heard.some(h=>ok(h)))return 'ok';
+  $('status').textContent=heard.length?`들린 말: “${heard[0]}” — 다시 말해보세요`:'소리가 안 들렸어요. 다시 말해보세요';
+  await race(new Promise(r=>setTimeout(r,900)));
+ }
+}
+
+async function stage1(it,id,tag){
+ cur=it;
+ $('tgt').textContent='표현: '+it.word;
+ $('badge').textContent='1단계 · 듣고 따라 말하기 '+tag;
+ $('en').innerHTML=hl(it.en,it.target);$('ko').textContent=it.ko;$('status').textContent='';
+ await race(speak(it.en,'en-US'));
+ const r=await until(id,h=>similar(h,it.en));
+ if(r==='cancel')return;
+ if(r==='ok'){$('status').textContent='✅ 좋아요!';await race(new Promise(r=>setTimeout(r,700)))}
+}
+async function stage2(it,id,tag){
+ cur=it;
+ $('tgt').textContent='표현: '+it.word;
+ if(id!==runId)return;
+ $('badge').textContent='2단계 · 빈칸 채워 말하기 '+tag;
+ const bi=it.en.indexOf(it.target);const blanked=hesc(it.en.slice(0,bi))+'<span class="blank">_____</span>'+hesc(it.en.slice(bi+it.target.length));
+ $('en').innerHTML=blanked;$('ko').textContent=it.ko;$('status').textContent='';
+ await race(speak(it.ko,'ko-KR'));
+ const r=await until(id,h=>hasAll(h,it.target));
+ if(r==='cancel')return;
+ $('en').innerHTML=hl(it.en,it.target);
+ if(r==='ok'){$('status').textContent='✅ 정답!';await race(speak(it.en,'en-US'))}
+}
+async function runGroup(g,id){
+ const n=g.items.length;
+ for(let i=0;i<n;i++){if(id!==runId)return;await stage1(g.items[i],id,`(${i+1}/${n})`)}
+ if(id!==runId)return;
+ $('badge').textContent='잠시 후 빈칸 채우기';$('tgt').textContent='표현: '+g.word;$('en').textContent='';$('ko').textContent='';
+ $('status').textContent='이제 방금 들은 문장들을 빈칸으로 연습해요';
+ await race(new Promise(r=>setTimeout(r,1500)));
+ for(let i=0;i<n;i++){if(id!==runId)return;await stage2(g.items[i],id,`(${i+1}/${n})`)}
+ if(id!==runId)return;
+ done++;$('count').textContent=`이번 세션 ${done}개 표현 완료`;
+}
+
+async function loop(id){
+ $('retry').classList.add('hide');
+ while(id===runId){
+  $('status').textContent='문장을 만드는 중…';
+  $('en').textContent='…';$('ko').textContent='';
+  const it=await nextItem(id);
+  if(id!==runId)return;
+  if(!it){$('status').textContent='문장을 만들지 못했어요: '+(lastErr||'알 수 없는 오류')+' — 다시 시도 버튼을 눌러보세요.';$('retry').classList.remove('hide');return}
+  await runGroup(it,id);
+ }
+}
+
+$('retry').onclick=()=>{errCount=0;lastErr='';failUntil=0;loop(runId)};
+$('start').onclick=async()=>{
+ const sc=$('scope').value;pool=sc==='all'?words.slice():words.filter(w=>w.c===sc);
+ if(!pool.length){$('env').textContent='선택한 범위에 표현이 없어요. 먼저 추가해주세요.';return}
+ if(!cfgOk()){$('env').textContent='먼저 "AI 설정"에서 모델과 API 키를 저장해주세요.';$('aiBox').open=true;return}
+ await loadCache();queue=[];order=shuffle(pool);ptr=0;done=0;$('count').textContent='';
+ $('setup').classList.add('hide');$('study').classList.remove('hide');
+ const id=++runId;
+ try{speechSynthesis.getVoices();speechSynthesis.speak(new SpeechSynthesisUtterance(''))}catch(e){}
+ loop(id);
+};
+$('mic').onclick=()=>{
+ if(micFn){const f=micFn;micFn=null;f();return}
+ stopFn&&stopFn();
+};
+const submitTyped=()=>{
+ const t=$('ans').value.trim();if(!t)return;$('ans').value='';
+ if(micFn){const f=micFn;micFn=null;f({text:t})}else if(typedFn)typedFn(t);
+};
+$('go').onclick=submitTyped;
+$('ans').onkeydown=e=>{if(e.key==='Enter')submitTyped()};
+$('skip').onclick=()=>{try{rec&&rec.abort()}catch(e){}try{speechSynthesis.cancel()}catch(e){}skipFn&&skipFn()};
+$('hear').onclick=()=>cur&&speak(cur.en,'en-US');
+$('reveal').onclick=()=>{if(cur)$('en').innerHTML=hl(cur.en,cur.target)};
+$('stop').onclick=()=>{
+ runId++;try{rec&&rec.abort()}catch(e){}try{speechSynthesis.cancel()}catch(e){}
+ skipFn&&skipFn();
+ $('study').classList.add('hide');$('setup').classList.remove('hide');
+};
+</script>
+</body>
+</html>
